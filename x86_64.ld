@@ -1,49 +1,55 @@
-OUTPUT_FORMAT("elf64-x86-64")
-VMA = 0xFFFFFFFF80000000;
-ENTRY(bootstrap32)
+/* Tell the linker that we want an x86_64 ELF64 output file */
+OUTPUT_FORMAT(elf64-x86-64)
+OUTPUT_ARCH(i386:x86-64)
+
+/* We want the symbol _start to be our entry point */
+ENTRY(_start)
+
+/* Define the program headers we want so the bootloader gives us the right */
+/* MMU permissions */
+PHDRS
+{
+    text    PT_LOAD    FLAGS((1 << 0) | (1 << 2)) ; /* Execute + Read */
+    rodata  PT_LOAD    FLAGS((1 << 2)) ;            /* Read only */
+    data    PT_LOAD    FLAGS((1 << 1) | (1 << 2)) ; /* Write + Read */
+}
+
 SECTIONS
 {
-	. = 0x100000;
-    __kernel_start = .;
+    /* We wanna be placed in the topmost 2GiB of the address space, for optimisations */
+    /* and because that is what the Limine spec mandates. */
+    /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
+    /* that is the beginning of the region. */
+    . = 0xffffffff80000000;
 
-	.bootstrap :
-	{
-		*(.bootstrap)
-		*(.trampoline)
-	}
+    .text : {
+        *(.text .text.*)
+    } :text
 
-	. += VMA;
+    /* Move to the next memory page for .rodata */
+    . += CONSTANT(MAXPAGESIZE);
 
-    .text ALIGN (0x1000) : AT(ADDR(.text) - VMA)
-    {
-    	*(.text)
-	}
+    .rodata : {
+        *(.rodata .rodata.*)
+        FOO = .;
+    } :rodata
 
-    .rodata ALIGN (0x1000) : AT(ADDR(.rodata) - VMA)
-    {
-        *(.rodata)
-    }
+    /* Move to the next memory page for .data */
+    . += CONSTANT(MAXPAGESIZE);
 
-    .data ALIGN (0x1000) : AT(ADDR(.data) - VMA)
-    {
-        *(.data)
-    }
+    .data : {
+        *(.data .data.*)
+        BAR = .;
+    } :data
 
-	.eh_frame ALIGN(0x1000) : AT(ADDR(.eh_frame) - VMA)
-   	{
-   	    *(.eh_frame)
-   	}
-
-    .bss ALIGN(0x1000) : AT(ADDR(.bss) - VMA)
-    {
-        *(.bss)
+    .bss : {
         *(COMMON)
-    }
+        *(.bss .bss.*)
+    } :data
 
-    /DISCARD/ :
-    {
-       	*(.comment)
+    /* Discard unused sections from object files that may cause issues. */
+    /DISCARD/ : {
+        *.o(*)
+        *.a:*(*)
     }
-
-    __kernel_end = . - VMA;
 }
