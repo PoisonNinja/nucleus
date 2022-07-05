@@ -8,6 +8,7 @@ mod x86_64;
 use core::panic::PanicInfo;
 
 pub fn kmain() -> ! {
+    info!("nucleus v{}", env!("CARGO_PKG_VERSION"));
     loop {}
 }
 
