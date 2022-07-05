@@ -12,7 +12,7 @@ pub extern "C" fn _start() -> ! {
     MMAP_REQUEST.get_response().get().unwrap();
 
     log::set_log_output(&SERIAL_LOGGER);
-    crate::println!("Hello world!");
+    println!("Hello world!");
 
     crate::kmain();
 }
