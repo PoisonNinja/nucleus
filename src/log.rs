@@ -1,6 +1,10 @@
 use core::fmt::{Arguments, Error, Result, Write};
 use spin::Mutex;
 
+pub trait LogSink: Send + Sync {
+    fn write(&self, buffer: &[u8]);
+}
+
 enum Level {
     DEBUG,
     INFO,
@@ -9,7 +13,7 @@ enum Level {
 }
 
 struct Log {
-    sink: Option<fn(&[u8])>,
+    sink: Option<&'static dyn LogSink>,
 }
 
 impl Log {
@@ -17,7 +21,7 @@ impl Log {
         Log { sink: None }
     }
 
-    fn set_sink(&mut self, sink: fn(&[u8])) {
+    fn set_sink(&mut self, sink: &'static dyn LogSink) {
         self.sink = Some(sink)
     }
 }
@@ -25,7 +29,7 @@ impl Log {
 impl Write for Log {
     fn write_str(&mut self, s: &str) -> Result {
         if let Some(sink) = self.sink {
-            sink(s.as_bytes());
+            sink.write(s.as_bytes());
             Ok(())
         } else {
             Err(Error)
@@ -35,7 +39,7 @@ impl Write for Log {
 
 static LOGGER: Mutex<Log> = Mutex::new(Log::new());
 
-pub fn set_log_output(sink: fn(&[u8])) {
+pub fn set_log_output(sink: &'static dyn LogSink) {
     LOGGER.lock().set_sink(sink)
 }
 
