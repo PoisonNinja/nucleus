@@ -1,3 +1,4 @@
+use super::cpu;
 use super::serial::SerialLogger;
 use crate::log;
 use limine::LimineMmapRequest;
@@ -12,7 +13,9 @@ pub extern "C" fn _start() -> ! {
     MMAP_REQUEST.get_response().get().unwrap();
 
     log::set_log_output(&SERIAL_LOGGER);
-    info!("Hello world!");
+    debug!("Begin x86_64 platform init");
+
+    cpu::init();
 
     crate::kmain();
 }
