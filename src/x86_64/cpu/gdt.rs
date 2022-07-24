@@ -100,23 +100,23 @@ static mut GDT_ENTRIES: [Entry; GDT_SIZE] = [
     ),
 ];
 
-unsafe fn lgdt(descriptor: &Descriptor) {
+unsafe fn lgdt(descriptor: &Descriptor, data_segment: u8, code_segment: u8) {
     // Far jump technique based on x86_64 crate - load the GDT, and then
     // reload the segment registeres
     asm!(
-        "lgdt [{}]",
-        "mov ax, 0x10",
-        "mov ds, ax",
-        "mov es, ax",
-        "mov ss, ax",
-        "mov rax, 0x8",
-        "push rax",
-        "lea rax, [1f + rip]",
-        "push rax",
+        "lgdt [{descriptor}]",
+        "mov ds, {data_segment:x}",
+        "mov es, {data_segment:x}",
+        "mov ss, {data_segment:x}",
+        "push {code_segment}",
+        "lea {jump_target}, [1f + rip]",
+        "push {jump_target}",
         "retfq",
         "1:",
-        in(reg) descriptor,
-        out("rax") _
+        descriptor = in(reg) descriptor,
+        data_segment = in(reg_abcd) data_segment as u16,
+        code_segment = in(reg) code_segment as u64,
+        jump_target = lateout(reg) _
     );
 }
 
@@ -126,6 +126,6 @@ pub fn init() {
         offset: unsafe { &GDT_ENTRIES as *const _ as u64 },
     };
     unsafe {
-        lgdt(&descriptor);
+        lgdt(&descriptor, 0x10, 0x08);
     }
 }
