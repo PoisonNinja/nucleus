@@ -5,6 +5,8 @@ use core::{
 };
 
 const GDT_SIZE: usize = 5;
+pub const CODE_SEGMENT: u16 = 0x8;
+pub const DATA_SEGMENT: u16 = 0x10;
 
 #[repr(C, packed)]
 struct Descriptor {
@@ -13,13 +15,10 @@ struct Descriptor {
 }
 
 impl Descriptor {
-    const fn new(limit: u16, offset: u64) -> Descriptor {
-        Descriptor {
-            size: limit,
-            offset,
-        }
+    const fn new(size: u16, offset: u64) -> Descriptor {
+        Descriptor { size, offset }
     }
-    unsafe fn load(&self, data_segment: u8, code_segment: u8) {
+    unsafe fn load(&self, data_segment: u16, code_segment: u16) {
         asm!(
             "lgdt [{descriptor}]",
             "mov ds, {data_segment:x}",
@@ -31,7 +30,7 @@ impl Descriptor {
             "retfq",
             "1:",
             descriptor = in(reg) self,
-            data_segment = in(reg_abcd) data_segment as u16,
+            data_segment = in(reg_abcd) data_segment,
             code_segment = in(reg) code_segment as u64,
             jump_target = lateout(reg) _
         );
@@ -107,7 +106,7 @@ impl Table {
             entries: [Entry::new(0, EntryType::Null); GDT_SIZE],
         }
     }
-    fn load(&self, data_segment: u8, code_segment: u8) {
+    fn load(&self, data_segment: u16, code_segment: u16) {
         let descriptor = Descriptor::new(
             (size_of::<Entry>() * GDT_SIZE - 1) as u16,
             &self.entries as *const _ as u64,
@@ -166,6 +165,6 @@ pub fn init() {
                 writable: true,
             },
         );
-        GDT.load(0x10, 0x08);
+        GDT.load(DATA_SEGMENT, CODE_SEGMENT);
     }
 }
