@@ -1,4 +1,10 @@
-use core::{arch::asm, mem::size_of};
+use core::{
+    arch::asm,
+    mem::size_of,
+    ops::{Index, IndexMut},
+};
+
+const GDT_SIZE: usize = 5;
 
 #[repr(C, packed)]
 struct Descriptor {
@@ -13,7 +19,7 @@ impl Descriptor {
             offset,
         }
     }
-    unsafe fn lgdt(&self, data_segment: u8, code_segment: u8) {
+    unsafe fn load(&self, data_segment: u8, code_segment: u8) {
         asm!(
             "lgdt [{descriptor}]",
             "mov ds, {data_segment:x}",
@@ -91,46 +97,75 @@ impl Entry {
     }
 }
 
-const GDT_SIZE: usize = 5;
+struct Table {
+    entries: [Entry; GDT_SIZE],
+}
+
+impl Table {
+    const fn new() -> Table {
+        Table {
+            entries: [Entry::new(0, EntryType::Null); GDT_SIZE],
+        }
+    }
+    fn load(&self, data_segment: u8, code_segment: u8) {
+        let descriptor = Descriptor::new(
+            (size_of::<Entry>() * GDT_SIZE - 1) as u16,
+            &self.entries as *const _ as u64,
+        );
+        unsafe {
+            descriptor.load(data_segment, code_segment);
+        }
+    }
+}
+
+impl Index<usize> for Table {
+    type Output = Entry;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        return &self.entries[index];
+    }
+}
+
+impl IndexMut<usize> for Table {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        return &mut self.entries[index];
+    }
+}
+
 // Must be mut to allow the CPU to write to the accessed bits, safe to access
 // since this is only initialized once at boot
-static mut GDT_ENTRIES: [Entry; GDT_SIZE] = [
-    Entry::new(0, EntryType::Null),
-    Entry::new(
-        0,
-        EntryType::Code {
-            conforming: false,
-            readable: true,
-        },
-    ),
-    Entry::new(
-        0,
-        EntryType::Data {
-            grow_down: false,
-            writable: true,
-        },
-    ),
-    Entry::new(
-        3,
-        EntryType::Code {
-            conforming: false,
-            readable: true,
-        },
-    ),
-    Entry::new(
-        3,
-        EntryType::Data {
-            grow_down: false,
-            writable: true,
-        },
-    ),
-];
+static mut GDT: Table = Table::new();
 
 pub fn init() {
-    let descriptor = Descriptor::new((size_of::<Entry>() * GDT_SIZE - 1) as u16, unsafe {
-        &GDT_ENTRIES as *const _ as u64
-    });
     unsafe {
-        descriptor.lgdt(0x10, 0x08);
+        GDT[1] = Entry::new(
+            0,
+            EntryType::Code {
+                conforming: false,
+                readable: true,
+            },
+        );
+        GDT[2] = Entry::new(
+            0,
+            EntryType::Data {
+                grow_down: false,
+                writable: true,
+            },
+        );
+        GDT[3] = Entry::new(
+            3,
+            EntryType::Code {
+                conforming: false,
+                readable: true,
+            },
+        );
+        GDT[4] = Entry::new(
+            3,
+            EntryType::Data {
+                grow_down: false,
+                writable: true,
+            },
+        );
+        GDT.load(0x10, 0x08);
     }
 }
