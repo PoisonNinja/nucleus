@@ -6,6 +6,29 @@ struct Descriptor {
     offset: u64,
 }
 
+impl Descriptor {
+    const fn new(limit: u16, offset: u64) -> Descriptor {
+        Descriptor { limit, offset }
+    }
+    unsafe fn lgdt(&self, data_segment: u8, code_segment: u8) {
+        asm!(
+            "lgdt [{descriptor}]",
+            "mov ds, {data_segment:x}",
+            "mov es, {data_segment:x}",
+            "mov ss, {data_segment:x}",
+            "push {code_segment}",
+            "lea {jump_target}, [1f + rip]",
+            "push {jump_target}",
+            "retfq",
+            "1:",
+            descriptor = in(reg) self,
+            data_segment = in(reg_abcd) data_segment as u16,
+            code_segment = in(reg) code_segment as u64,
+            jump_target = lateout(reg) _
+        );
+    }
+}
+
 enum EntryType {
     Null,
     Code { conforming: bool, readable: bool },
@@ -100,32 +123,11 @@ static mut GDT_ENTRIES: [Entry; GDT_SIZE] = [
     ),
 ];
 
-unsafe fn lgdt(descriptor: &Descriptor, data_segment: u8, code_segment: u8) {
-    // Far jump technique based on x86_64 crate - load the GDT, and then
-    // reload the segment registeres
-    asm!(
-        "lgdt [{descriptor}]",
-        "mov ds, {data_segment:x}",
-        "mov es, {data_segment:x}",
-        "mov ss, {data_segment:x}",
-        "push {code_segment}",
-        "lea {jump_target}, [1f + rip]",
-        "push {jump_target}",
-        "retfq",
-        "1:",
-        descriptor = in(reg) descriptor,
-        data_segment = in(reg_abcd) data_segment as u16,
-        code_segment = in(reg) code_segment as u64,
-        jump_target = lateout(reg) _
-    );
-}
-
 pub fn init() {
-    let descriptor: Descriptor = Descriptor {
-        limit: (size_of::<Entry>() * GDT_SIZE - 1) as u16,
-        offset: unsafe { &GDT_ENTRIES as *const _ as u64 },
-    };
+    let descriptor = Descriptor::new((size_of::<Entry>() * GDT_SIZE - 1) as u16, unsafe {
+        &GDT_ENTRIES as *const _ as u64
+    });
     unsafe {
-        lgdt(&descriptor, 0x10, 0x08);
+        descriptor.lgdt(0x10, 0x08);
     }
 }
