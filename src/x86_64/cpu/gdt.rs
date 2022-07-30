@@ -2,13 +2,16 @@ use core::{arch::asm, mem::size_of};
 
 #[repr(C, packed)]
 struct Descriptor {
-    limit: u16,
+    size: u16,
     offset: u64,
 }
 
 impl Descriptor {
     const fn new(limit: u16, offset: u64) -> Descriptor {
-        Descriptor { limit, offset }
+        Descriptor {
+            size: limit,
+            offset,
+        }
     }
     unsafe fn lgdt(&self, data_segment: u8, code_segment: u8) {
         asm!(
