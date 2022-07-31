@@ -4,6 +4,8 @@ use core::{
     ops::{Index, IndexMut},
 };
 
+use super::{exceptions, gdt};
+
 const IDT_SIZE: usize = 256;
 
 #[repr(C, packed)]
@@ -117,6 +119,26 @@ static mut IDT: Table = Table::new();
 
 pub fn init() {
     unsafe {
+        IDT[0].set_handler(exceptions::divide_by_zero, gdt::CODE_SEGMENT);
+        IDT[1].set_handler(exceptions::debug, gdt::CODE_SEGMENT);
+        IDT[2].set_handler(exceptions::nmi, gdt::CODE_SEGMENT);
+        IDT[3].set_handler(exceptions::breakpoint, gdt::CODE_SEGMENT);
+        IDT[4].set_handler(exceptions::overflow, gdt::CODE_SEGMENT);
+        IDT[5].set_handler(exceptions::bound_range_exceeded, gdt::CODE_SEGMENT);
+        IDT[6].set_handler(exceptions::invalid_opcode, gdt::CODE_SEGMENT);
+        IDT[7].set_handler(exceptions::device_not_available, gdt::CODE_SEGMENT);
+        IDT[8].set_handler(exceptions::double_fault, gdt::CODE_SEGMENT);
+        // 9 is unused
+        IDT[10].set_handler(exceptions::invalid_tss, gdt::CODE_SEGMENT);
+        IDT[11].set_handler(exceptions::segment_not_present, gdt::CODE_SEGMENT);
+        IDT[12].set_handler(exceptions::stack_segment_fault, gdt::CODE_SEGMENT);
+        IDT[13].set_handler(exceptions::general_protection_fault, gdt::CODE_SEGMENT);
+        IDT[14].set_handler(exceptions::page_fault, gdt::CODE_SEGMENT);
+        // 15 is reserved
+        IDT[16].set_handler(exceptions::x87_fpu_exception, gdt::CODE_SEGMENT);
+        IDT[17].set_handler(exceptions::alignment_check, gdt::CODE_SEGMENT);
+        IDT[18].set_handler(exceptions::machine_check, gdt::CODE_SEGMENT);
+        IDT[19].set_handler(exceptions::general_protection_fault, gdt::CODE_SEGMENT);
         IDT.load();
     }
 }
