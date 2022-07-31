@@ -1,5 +1,7 @@
 #![no_std] // don't link the Rust standard library
 #![no_main] // disable all Rust-level entry points
+#![feature(asm_sym)]
+#![feature(naked_functions)]
 
 #[macro_use]
 mod log;
