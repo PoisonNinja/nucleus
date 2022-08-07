@@ -44,27 +44,27 @@ interrupt_handler!(device_not_available, |ctx| {
     panic!()
 });
 
-interrupt_handler!(double_fault, |ctx| {
+interrupt_error_handler!(double_fault, |ctx| {
     error!("Exception: Double fault at {:x}", ctx.rip);
     panic!()
 });
 
-interrupt_handler!(invalid_tss, |ctx| {
+interrupt_error_handler!(invalid_tss, |ctx| {
     error!("Exception: Invalid TSS at {:x}", ctx.rip);
     panic!()
 });
 
-interrupt_handler!(segment_not_present, |ctx| {
+interrupt_error_handler!(segment_not_present, |ctx| {
     error!("Exception: Segment {:x} not present", ctx.err_code);
     panic!()
 });
 
-interrupt_handler!(stack_segment_fault, |ctx| {
+interrupt_error_handler!(stack_segment_fault, |ctx| {
     error!("Exception: Stack segment {:x} is invalid", ctx.err_code);
     panic!()
 });
 
-interrupt_handler!(general_protection_fault, |ctx| {
+interrupt_error_handler!(general_protection_fault, |ctx| {
     if ctx.err_code != 0 {
         error!(
             "Exception: General protection fault at {:x} with segment {:x}",
@@ -76,16 +76,16 @@ interrupt_handler!(general_protection_fault, |ctx| {
     panic!()
 });
 
-interrupt_handler!(page_fault, |ctx| {
+interrupt_error_handler!(page_fault, |ctx| {
     let cr2: u64;
     unsafe {
         asm!("mov {}, cr2", lateout(reg) cr2);
     }
     error!(
-        "Exception: Page fault triggered by {:x} with error code {:x} at {:x}",
+        "Exception: Page fault triggered by access to {:x} with error code {:x} while running {:x}",
         cr2, ctx.err_code, ctx.rip
     );
-    panic!()
+    panic!();
 });
 
 interrupt_handler!(x87_fpu_exception, |ctx| {
@@ -93,7 +93,7 @@ interrupt_handler!(x87_fpu_exception, |ctx| {
     panic!()
 });
 
-interrupt_handler!(alignment_check, |ctx| {
+interrupt_error_handler!(alignment_check, |ctx| {
     error!("Exception: Alignment check at {:x}", ctx.rip);
     panic!()
 });
