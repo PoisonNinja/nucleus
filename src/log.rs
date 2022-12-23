@@ -82,10 +82,6 @@ pub fn _print(level: Level, args: Arguments) {
         Level::WARNING => ("\x1b[33m", "WARNING"),
         Level::ERROR => ("\x1b[31m", "ERROR"),
     };
-    /*
-     * TODO: Fix deadlock here if we end up in an exception while printing
-     *       (e.g. if we dereference a NULL pointer in a call to info!)
-     */
     LOGGER
         .lock()
         .write_fmt(format_args!(
