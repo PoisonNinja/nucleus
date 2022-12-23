@@ -83,7 +83,7 @@ macro_rules! interrupt_exit {
 macro_rules! interrupt_handler {
     ($name:ident, |$context:ident| $code:block) => {
         #[naked]
-        pub extern "C" fn $name() {
+        extern "C" fn $name() {
             fn inner($context: &$crate::x86_64::cpu::interrupt::InterruptContext) {
                 $code
             }
@@ -102,7 +102,7 @@ macro_rules! interrupt_handler {
 macro_rules! interrupt_error_handler {
     ($name:ident, |$context:ident| $code:block) => {
         #[naked]
-        pub extern "C" fn $name() {
+        extern "C" fn $name() {
             fn inner($context: &$crate::x86_64::cpu::interrupt::InterruptContext) {
                 $code
             }

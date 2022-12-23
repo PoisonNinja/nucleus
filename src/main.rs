@@ -16,11 +16,6 @@ pub fn kmain() -> ! {
 
 /// This function is called on panic.
 #[panic_handler]
-fn panic(info: &PanicInfo) -> ! {
-    if let Some(s) = info.location() {
-        error!("Kernel panic from {}:{}", s.file(), s.line());
-    } else {
-        error!("Kernel panic");
-    }
+fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
