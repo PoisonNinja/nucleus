@@ -138,7 +138,7 @@ pub fn init() {
         IDT[16].set_handler(exceptions::x87_fpu_exception, gdt::CODE_SEGMENT);
         IDT[17].set_handler(exceptions::alignment_check, gdt::CODE_SEGMENT);
         IDT[18].set_handler(exceptions::machine_check, gdt::CODE_SEGMENT);
-        IDT[19].set_handler(exceptions::simd_fpu_exception, gdt::CODE_SEGMENT);
+        IDT[19].set_handler(exceptions::general_protection_fault, gdt::CODE_SEGMENT);
         IDT.load();
     }
 }
