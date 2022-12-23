@@ -4,6 +4,8 @@ use core::{
     ops::{Index, IndexMut},
 };
 
+use super::gdt;
+
 const IDT_SIZE: usize = 256;
 
 #[repr(C, packed)]
@@ -66,8 +68,7 @@ impl Entry {
             reserved: 0,
         }
     }
-    fn set_handler(&mut self, handler: extern "C" fn(), selector: u16) {
-        let handler = handler as u64;
+    fn set_handler(&mut self, handler: u64, selector: u16) {
         let (high, mid, low) = split_handler_address(handler);
         self.offset_low = low;
         self.offset_mid = mid;
