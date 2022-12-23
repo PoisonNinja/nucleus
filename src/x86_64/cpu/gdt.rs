@@ -19,20 +19,23 @@ impl Descriptor {
         Descriptor { size, offset }
     }
     unsafe fn load(&self, data_segment: u16, code_segment: u16) {
+        // Translation of https://wiki.osdev.org/GDT_Tutorial#Long_Mode
         asm!(
-            "lgdt [{descriptor}]",
-            "mov ds, {data_segment:x}",
-            "mov es, {data_segment:x}",
-            "mov ss, {data_segment:x}",
-            "push {code_segment}",
-            "lea {jump_target}, [1f + rip]",
-            "push {jump_target}",
+            "lgdt [{}]",
+            "push {:r}",
+            "lea {2}, [1f + rip]",
+            "push {2}",
             "retfq",
             "1:",
-            descriptor = in(reg) self,
-            data_segment = in(reg_abcd) data_segment,
-            code_segment = in(reg) code_segment as u64,
-            jump_target = lateout(reg) _
+            "mov ds, {3:x}",
+            "mov es, {3:x}",
+            "mov fs, {3:x}",
+            "mov gs, {3:x}",
+            "mov ss, {3:x}",
+            in(reg) self,
+            in(reg) code_segment,
+            out(reg) _,
+            in(reg_abcd) data_segment,
         );
     }
 }
