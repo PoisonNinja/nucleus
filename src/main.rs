@@ -1,5 +1,8 @@
-#![no_std] // don't link the Rust standard library
-#![no_main] // disable all Rust-level entry points
+#![no_std] // Don't link the Rust standard library
+#![no_main] // Disable all Rust-level entry points
+#![feature(naked_functions)] // Allow naked functions
+#![feature(asm_const)] // Allow const inputs to asm
+#![feature(asm_sym)] // Allow sym inputs to asm
 
 #[macro_use]
 mod log;
