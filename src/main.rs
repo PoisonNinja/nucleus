@@ -3,8 +3,10 @@
 #![feature(naked_functions)] // Allow naked functions
 #![feature(asm_const)] // Allow const inputs to asm
 
+mod interrupt;
 #[macro_use]
 mod log;
+mod mm;
 mod x86_64;
 
 use core::panic::PanicInfo;
