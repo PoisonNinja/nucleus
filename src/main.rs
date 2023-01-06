@@ -2,7 +2,6 @@
 #![no_main] // Disable all Rust-level entry points
 #![feature(naked_functions)] // Allow naked functions
 #![feature(asm_const)] // Allow const inputs to asm
-#![feature(asm_sym)] // Allow sym inputs to asm
 
 #[macro_use]
 mod log;
